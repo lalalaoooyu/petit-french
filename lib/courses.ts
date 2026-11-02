@@ -104,3 +104,13 @@ export function gender(fr: string): { g: "m" | "f"; plural: boolean } | null {
   if (m && ELIDED[m[2]]) return { g: ELIDED[m[2]], plural: m[1] === "les " };
   return null;
 }
+
+let index: Map<string, Word> | null = null;
+/** look a word up by its French text across both courses */
+export function findWord(fr: string): Word | undefined {
+  if (!index) {
+    index = new Map();
+    for (const c of Object.keys(COURSES) as CourseId[]) for (const d of deckNames(c)) for (const w of deckWords(c, d)) if (!index.has(w.fr)) index.set(w.fr, w);
+  }
+  return index.get(fr);
+}

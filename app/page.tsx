@@ -52,14 +52,12 @@ export default function Today() {
           复习 {due} 个 · 新词 {fresh} 个
         </p>
         <p className="mt-1 text-sm opacity-90">大约 5 分钟</p>
-        {/* the lesson flow itself arrives in step 2 */}
-        <button
-          disabled
-          className="btn-3d mt-5 w-full rounded-2xl bg-white py-4 text-lg font-extrabold text-grass-ink disabled:cursor-not-allowed"
-          title="下一步开发"
+        <Link
+          href="/lesson"
+          className="btn-3d mt-5 block w-full rounded-2xl bg-white py-4 text-center text-lg font-extrabold text-grass-ink"
         >
-          开始学习
-        </button>
+          {due + fresh > 0 ? "开始学习" : "今天都学完啦，去练习"}
+        </Link>
       </section>
 
       <Link href="/course" className="flex items-center gap-4 rounded-3xl border border-line bg-surface p-5 transition hover:border-grass">

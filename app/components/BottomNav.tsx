@@ -13,6 +13,7 @@ const TABS = [
 
 export default function BottomNav() {
   const path = usePathname();
+  if (path.startsWith("/lesson")) return null;
   return (
     <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-surface/95 backdrop-blur">
       <ul className="mx-auto flex max-w-xl justify-around px-2 pb-[max(env(safe-area-inset-bottom),8px)] pt-2">
