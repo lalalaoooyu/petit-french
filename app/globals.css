@@ -1,0 +1,63 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #fbf7ef;
+  --surface: #ffffff;
+  --line: #ece4d4;
+  --ink: #3b2a1e;
+  --muted: #9a8a78;
+  --grass: #58b03a;
+  --grass-ink: #2f6b1c;
+  --grass-soft: #e5f4dc;
+  --sun: #f5b82e;
+  --sun-soft: #fff1cc;
+  --masc: #3f86e0;
+  --fem: #e2668f;
+  --bad: #e0533d;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1d1915;
+    --surface: #2a241e;
+    --line: #3b332a;
+    --ink: #f5ece0;
+    --muted: #a8998a;
+    --grass-ink: #a6e08a;
+    --grass-soft: #2b3d22;
+    --sun-soft: #43361a;
+  }
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-line: var(--line);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-grass: var(--grass);
+  --color-grass-ink: var(--grass-ink);
+  --color-grass-soft: var(--grass-soft);
+  --color-sun: var(--sun);
+  --color-sun-soft: var(--sun-soft);
+  --color-masc: var(--masc);
+  --color-fem: var(--fem);
+  --color-bad: var(--bad);
+  --font-sans: var(--font-nunito), "PingFang SC", "Hiragino Sans GB", system-ui, sans-serif;
+  --font-pixel: var(--font-pixelify), monospace;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+}
+
+/* chunky pressable button, the one tactile cue kept from the pixel version */
+.btn-3d {
+  box-shadow: 0 4px 0 var(--grass-ink);
+  transition: transform 0.08s, box-shadow 0.08s;
+}
+.btn-3d:active {
+  transform: translateY(4px);
+  box-shadow: 0 0 0 var(--grass-ink);
+}
