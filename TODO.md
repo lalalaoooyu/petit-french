@@ -17,16 +17,16 @@
 
 ## 待办（按顺序）
 
-- [ ] **第 3 步：Supabase 登录 + 云端进度**（方案已确认，见下）
-  - [x] Supabase 项目已建好：`petit-french`，东京区域（ap-northeast-1），Project URL `https://dndkhnudbztndwmmaxwb.supabase.co`
-  - 创建时取消了「Automatically expose new tables」：建表 SQL 里要手动给 `progress` 表 grant 权限
+- [ ] **第 3 步：Supabase 登录 + 云端进度**（代码已完成并提交，等 Supabase 后台设置后测试）
+  - [x] Supabase 项目：`petit-french`，东京区域（ap-northeast-1），Project URL `https://dndkhnudbztndwmmaxwb.supabase.co`
   - [x] publishable key 已保存在 `.env.local`（已被 git 忽略；部署时要在 Vercel 里配置同样的环境变量）
-  - [ ] 确认德国区域的旧项目已删除
-  - 第一版只做邮箱魔法链接登录；Google 登录之后再加；Apple 登录等做 iOS 时再加
-  - 一张 `progress` 表（user_id / data JSON / updated_at），开启 RLS，每人只能读写自己的那一行
-  - 登录时合并本地和云端进度：已掌握和错题取并集，经验值和最高分取较大值，复习时间取更早的
-  - 答题后先存本地，2 秒后再同步云端；断网也能学
-  - 文件：`lib/supabase.ts`、建表 SQL、`lib/progress.ts`、`app/login`、`app/auth/callback`、`app/me`
+  - [x] 代码：邮箱魔法链接登录（`app/login`、`app/auth/callback`）、云端同步（`lib/sync.ts`）、合并逻辑（`lib/merge.ts`，测试已通过）、完整「我的」页面
+  - [ ] **Alice 要在 Supabase 后台做：**
+    - [ ] SQL Editor → New query → 粘贴 `supabase/schema.sql` 全部内容 → Run（建 `progress` 表 + RLS + grant）
+    - [ ] Authentication → URL Configuration：Site URL 填 `http://localhost:3005`，Redirect URLs 加 `http://localhost:3005/auth/callback`
+    - [ ] 删除德国区域的旧项目
+  - [ ] 设置后：Claude 检查表是否建好 → Alice 用自己的邮箱在 http://localhost:3005/login 测试登录 → 检查同步、两个账号互相看不到数据
+  - 注意：免费方案自带邮件每小时只能发很少几封，测试时别连续发送
 - [ ] 第 4 步：词库迁到数据库
 - [ ] 第 5 步：用 edge-tts 生成真人感 mp3 发音，替换浏览器语音
 - [ ] 第 6 步：用 AI 绘图（Recraft / Midjourney）做像素风吉祥物和图标，替换手画的占位图标（Alice 指导流程）
@@ -34,7 +34,7 @@
 
 ## 小问题 / 以后再做
 
-- [ ] 「我的」页面还是占位：要做学习统计、词汇本（已掌握 / 学习中 / 易错）、设置（每日目标、语速）
+- [ ] 「我的」页面已有统计和设置，还缺词汇本（已掌握 / 学习中 / 易错词列表）
 - [ ] 空课程状态（全部学完且没有要复习的词）只按代码逻辑核对过，没有实测
 - [ ] 部署：确认后部署到 Vercel，再把 `next` 合并到 `main` 替换旧版；新网址的浏览器进度不会继承旧网址的
 - [ ] DELF A1 词汇是按经验整理的，没有逐条对照官方考纲
