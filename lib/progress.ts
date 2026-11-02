@@ -25,7 +25,11 @@ const EMPTY: Progress = {
   xp: 0, known: {}, streak: 0, last: "", today: 0, wrong: {}, box: {}, goal: 50, rate: 0.95, best: {}, course: "daily",
 };
 
-function load(): Progress {
+/** fired after every local save (cloud sync listens) and after a cloud merge (pages reload) */
+export const SAVED_EVENT = "petitfr-saved";
+export const UPDATED_EVENT = "petitfr-updated";
+
+export function loadLocal(): Progress {
   let p: Progress = { ...EMPTY };
   try {
     p = { ...EMPTY, ...JSON.parse(localStorage.getItem(KEY) || "{}") };
@@ -42,26 +46,30 @@ function load(): Progress {
   return p;
 }
 
-function persist(p: Progress) {
+export function saveLocal(p: Progress, { silent = false } = {}) {
   try {
     localStorage.setItem(KEY, JSON.stringify(p));
     localStorage.setItem("petitfr-course", p.course);
   } catch {}
+  if (!silent) window.dispatchEvent(new Event(SAVED_EVENT));
 }
 
 /** null until mounted, so server and first client render match */
 export function useProgress() {
   const [p, setP] = useState<Progress | null>(null);
   useEffect(() => {
-    const v = load();
-    persist(v);
+    const v = loadLocal();
+    saveLocal(v, { silent: true });
     setP(v);
+    const reload = () => setP(loadLocal());
+    window.addEventListener(UPDATED_EVENT, reload);
+    return () => window.removeEventListener(UPDATED_EVENT, reload);
   }, []);
   const update = (fn: (p: Progress) => Progress) =>
     setP((cur) => {
       if (!cur) return cur;
       const next = fn(cur);
-      persist(next);
+      saveLocal(next);
       return next;
     });
   return [p, update] as const;

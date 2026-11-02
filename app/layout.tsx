@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Nunito, Pixelify_Sans } from "next/font/google";
 import BottomNav from "./components/BottomNav";
+import SyncStarter from "./components/SyncStarter";
 import "./globals.css";
 
 const nunito = Nunito({ subsets: ["latin", "latin-ext"], variable: "--font-nunito" });
@@ -28,6 +29,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           <a className="underline" href="https://www.linkedin.com/in/jiatian-yu-7223b9232/" target="_blank" rel="noopener">LinkedIn</a>
         </footer>
         <BottomNav />
+        <SyncStarter />
       </body>
     </html>
   );

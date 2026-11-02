@@ -27,12 +27,21 @@ if (typeof window !== "undefined" && "speechSynthesis" in window) {
   speechSynthesis.onvoiceschanged = pickVoice;
 }
 
+/** the rate chosen in 「我的」 settings, stored with the rest of the progress */
+function savedRate() {
+  try {
+    return JSON.parse(localStorage.getItem("petitfr") || "{}").rate ?? 0.95;
+  } catch {
+    return 0.95;
+  }
+}
+
 export function speak(text: string, opts: { slow?: boolean; rate?: number } = {}) {
   try {
     const u = new SpeechSynthesisUtterance(text.replace(/…/g, ""));
     u.lang = "fr-FR";
     if (voice) u.voice = voice;
-    u.rate = opts.slow ? 0.7 : (opts.rate ?? 0.95);
+    u.rate = opts.slow ? 0.7 : (opts.rate ?? savedRate());
     speechSynthesis.cancel();
     speechSynthesis.speak(u);
   } catch {}
