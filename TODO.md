@@ -20,7 +20,7 @@
 - [ ] **第 3 步：Supabase 登录 + 云端进度**（方案已确认，见下）
   - [x] Supabase 项目已建好：`petit-french`，东京区域（ap-northeast-1），Project URL `https://dndkhnudbztndwmmaxwb.supabase.co`
   - 创建时取消了「Automatically expose new tables」：建表 SQL 里要手动给 `progress` 表 grant 权限
-  - [ ] 还需要 Alice 提供：anon / publishable key（不要给 service_role / secret key）
+  - [x] publishable key 已保存在 `.env.local`（已被 git 忽略；部署时要在 Vercel 里配置同样的环境变量）
   - [ ] 确认德国区域的旧项目已删除
   - 第一版只做邮箱魔法链接登录；Google 登录之后再加；Apple 登录等做 iOS 时再加
   - 一张 `progress` 表（user_id / data JSON / updated_at），开启 RLS，每人只能读写自己的那一行
