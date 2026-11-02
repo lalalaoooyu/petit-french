@@ -17,7 +17,7 @@
 
 ## 待办（按顺序）
 
-- [ ] **第 3 步：Supabase 登录 + 云端进度**（代码已完成并提交，等 Supabase 后台设置后测试）
+- [x] **第 3 步：Supabase 登录 + 云端进度**（2026-11-02 Alice 用自己的邮箱登录成功）
   - [x] Supabase 项目：`petit-french`，东京区域（ap-northeast-1），Project URL `https://dndkhnudbztndwmmaxwb.supabase.co`
   - [x] publishable key 已保存在 `.env.local`（已被 git 忽略；部署时要在 Vercel 里配置同样的环境变量）
   - [x] 代码：邮箱魔法链接登录（`app/login`、`app/auth/callback`）、云端同步（`lib/sync.ts`）、合并逻辑（`lib/merge.ts`，测试已通过）、完整「我的」页面
@@ -25,7 +25,9 @@
     - [x] SQL Editor → New query → 粘贴 `supabase/schema.sql` 全部内容 → Run（建 `progress` 表 + RLS + grant）
     - [x] Authentication → URL Configuration：Site URL 填 `http://localhost:3005`，Redirect URLs 加 `http://localhost:3005/auth/callback`
     - [ ] 删除德国区域的旧项目
-  - [ ] 设置后：Claude 检查表是否建好 → Alice 用自己的邮箱在 http://localhost:3005/login 测试登录 → 检查同步、两个账号互相看不到数据
+  - [x] 表已建好（未登录访问会被拒绝），本地登录测试成功
+  - [ ] 还没测：两台设备之间的同步；用第二个账号确认看不到别人的数据
+  - 登录改用 implicit flow：邮件链接在任何浏览器打开都能登录（PKCE 要求同一浏览器，之前因此失败）
   - 注意：免费方案自带邮件每小时只能发很少几封，测试时别连续发送
 - [ ] 第 4 步：词库迁到数据库
 - [ ] 第 5 步：用 edge-tts 生成真人感 mp3 发音，替换浏览器语音
