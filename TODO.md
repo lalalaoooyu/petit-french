@@ -22,7 +22,7 @@
   - [x] publishable key 已保存在 `.env.local`（已被 git 忽略；部署时要在 Vercel 里配置同样的环境变量）
   - [x] 代码：邮箱魔法链接登录（`app/login`、`app/auth/callback`）、云端同步（`lib/sync.ts`）、合并逻辑（`lib/merge.ts`，测试已通过）、完整「我的」页面
   - [ ] **Alice 要在 Supabase 后台做：**
-    - [ ] SQL Editor → New query → 粘贴 `supabase/schema.sql` 全部内容 → Run（建 `progress` 表 + RLS + grant）
+    - [x] SQL Editor → New query → 粘贴 `supabase/schema.sql` 全部内容 → Run（建 `progress` 表 + RLS + grant）
     - [ ] Authentication → URL Configuration：Site URL 填 `http://localhost:3005`，Redirect URLs 加 `http://localhost:3005/auth/callback`
     - [ ] 删除德国区域的旧项目
   - [ ] 设置后：Claude 检查表是否建好 → Alice 用自己的邮箱在 http://localhost:3005/login 测试登录 → 检查同步、两个账号互相看不到数据
