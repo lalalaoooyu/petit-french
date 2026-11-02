@@ -18,7 +18,10 @@
 ## 待办（按顺序）
 
 - [ ] **第 3 步：Supabase 登录 + 云端进度**（方案已确认，见下）
-  - 需要 Alice 先做：在 supabase.com 新建项目（免费方案，东京区域），把 Project URL 和 anon key 给 Claude（不要给 service_role key）
+  - [x] Supabase 项目已建好：`petit-french`，东京区域（ap-northeast-1），Project URL `https://dndkhnudbztndwmmaxwb.supabase.co`
+  - 创建时取消了「Automatically expose new tables」：建表 SQL 里要手动给 `progress` 表 grant 权限
+  - [ ] 还需要 Alice 提供：anon / publishable key（不要给 service_role / secret key）
+  - [ ] 确认德国区域的旧项目已删除
   - 第一版只做邮箱魔法链接登录；Google 登录之后再加；Apple 登录等做 iOS 时再加
   - 一张 `progress` 表（user_id / data JSON / updated_at），开启 RLS，每人只能读写自己的那一行
   - 登录时合并本地和云端进度：已掌握和错题取并集，经验值和最高分取较大值，复习时间取更早的
