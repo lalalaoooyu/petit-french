@@ -4,13 +4,15 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
-/* supabase-js exchanges the ?code= from the email link on its own; this page just waits for it */
+/* supabase-js reads the session from the email link's URL on its own; this page just waits for it */
 export default function AuthCallback() {
   const router = useRouter();
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
-    const err = new URLSearchParams(location.search).get("error_description");
+    const err =
+      new URLSearchParams(location.search).get("error_description") ??
+      new URLSearchParams(location.hash.slice(1)).get("error_description");
     if (err) return setFailed(true);
     const { data } = supabase.auth.onAuthStateChange((event) => {
       if (event === "SIGNED_IN") router.replace("/me");
