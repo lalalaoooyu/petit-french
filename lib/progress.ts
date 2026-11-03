@@ -88,23 +88,34 @@ export function dueCount(p: Progress) {
 
 export type UnitState = { name: string; total: number; known: number; stars: 0 | 1 | 2 | 3; unlocked: boolean };
 
-/** a unit unlocks once the previous one has at least one star (a third of its words known) */
+/** key in `best` for a unit's best lesson accuracy (unit names repeat across courses) */
+export const unitKey = (course: CourseId, unit: string) => `${course}/${unit}`;
+
+/** 60% one star, 80% two, 100% three */
+export const starsFor = (pct: number): UnitState["stars"] => (pct >= 100 ? 3 : pct >= 80 ? 2 : pct >= 60 ? 1 : 0);
+
+/**
+ * stars come from the unit's best lesson accuracy, once all its words are learned;
+ * a unit learned before scores were kept counts as one star.
+ * a unit unlocks once the previous one has at least one star.
+ */
 export function units(p: Progress, course: CourseId): UnitState[] {
   let prevStars = 3;
   return deckNames(course).map((name, i) => {
     const words = COURSES[course].decks[name].w;
     const known = words.filter(([fr]) => p.known[fr]).length;
-    const stars = Math.floor((known / words.length) * 3) as UnitState["stars"];
+    const best = p.best[unitKey(course, name)];
+    const stars = known < words.length ? 0 : best === undefined ? 1 : starsFor(best);
     const unlocked = i === 0 || prevStars >= 1;
     prevStars = stars;
     return { name, total: words.length, known, stars, unlocked };
   });
 }
 
-/** first unlocked unit that is not fully learned */
+/** first unlocked unit that still has new words, or that needs a star to unlock the next one */
 export function currentUnit(p: Progress, course: CourseId) {
   const list = units(p, course);
-  return list.find((u) => u.unlocked && u.stars < 3) ?? list[list.length - 1];
+  return list.find((u) => u.unlocked && (u.known < u.total || u.stars === 0)) ?? list[list.length - 1];
 }
 
 export function newWords(p: Progress, course: CourseId, n = 6, unit?: string): Word[] {

@@ -21,7 +21,7 @@ export function SpeakButton({ text, big = false }: { text: string; big?: boolean
   );
 }
 
-export function Learn({ word, onNext }: { word: Word; onNext: () => void }) {
+export function Learn({ word, onNext }: { word: Word; onNext: (remembered: boolean) => void }) {
   useEffect(() => speak(word.fr), [word.fr]);
   return (
     <div className="flex flex-1 flex-col">
@@ -41,9 +41,14 @@ export function Learn({ word, onNext }: { word: Word; onNext: () => void }) {
           </button>
         )}
       </div>
-      <button onClick={onNext} className="btn-3d mt-5 rounded-2xl bg-grass py-4 text-lg font-extrabold text-white">
-        记住了，继续
-      </button>
+      <div className="mt-5 flex gap-3">
+        <button onClick={() => onNext(false)} className="flex-1 rounded-2xl border-2 border-line bg-surface py-4 text-lg font-bold">
+          没记住
+        </button>
+        <button onClick={() => onNext(true)} className="btn-3d flex-1 rounded-2xl bg-grass py-4 text-lg font-extrabold text-white">
+          记住了
+        </button>
+      </div>
     </div>
   );
 }
@@ -166,13 +171,14 @@ export function Spell({ word, locked, onAnswer }: { word: Word; locked: boolean;
   );
 }
 
-export function Match({ words, onDone }: { words: Word[]; onDone: (miss: number) => void }) {
+/** onDone gets the wrong pairs that were tried, as [french, chinese it was matched with] */
+export function Match({ words, onDone }: { words: Word[]; onDone: (misses: [string, string][]) => void }) {
   const left = useMemo(() => shuffle(words), [words]);
   const right = useMemo(() => shuffle(words), [words]);
   const [sel, setSel] = useState<{ side: "l" | "r"; fr: string } | null>(null);
   const [done, setDone] = useState<string[]>([]);
   const [bad, setBad] = useState<string[]>([]);
-  const [miss, setMiss] = useState(0);
+  const [misses, setMisses] = useState<[string, string][]>([]);
 
   const tap = (side: "l" | "r", fr: string) => {
     if (done.includes(fr)) return;
@@ -182,9 +188,11 @@ export function Match({ words, onDone }: { words: Word[]; onDone: (miss: number)
       const next = [...done, fr];
       setDone(next);
       setSel(null);
-      if (next.length === words.length) setTimeout(() => onDone(miss), 400);
+      if (next.length === words.length) setTimeout(() => onDone(misses), 400);
     } else {
-      setMiss((m) => m + 1);
+      const [frSide, zhSide] = side === "l" ? [fr, sel.fr] : [sel.fr, fr];
+      const zh = words.find((w) => w.fr === zhSide)!.zh;
+      setMisses((m) => [...m, [frSide, zh]]);
       setBad([`${sel.side}${sel.fr}`, `${side}${fr}`]);
       setSel(null);
       setTimeout(() => setBad([]), 500);

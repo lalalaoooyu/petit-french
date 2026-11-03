@@ -5,12 +5,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { COURSES, deckWords, type CourseId } from "@/lib/courses";
 import { buildLesson, buildPractice, recordAnswer, recordLearned, XP, type PracticeMode, type Step } from "@/lib/lesson";
-import { currentUnit, useProgress, type Progress } from "@/lib/progress";
+import { currentUnit, starsFor, unitKey, useProgress, type Progress } from "@/lib/progress";
 import GenderTag from "../components/GenderTag";
 import PixelIcon from "../components/PixelIcon";
 import { Choice, Learn, Match, Spell } from "./Questions";
 
-type Feedback = { ok: boolean; step: Step; cheer: string };
+type Feedback = { ok: boolean; step: Step; cheer: string; misses?: [string, string][] };
 type Stats = { asked: number; correct: number; xp: number; learned: string[]; wrong: string[] };
 
 const stepWord = (s: Step) => (s.kind === "match" ? null : s.word);
@@ -32,31 +32,47 @@ function Lesson() {
   const [retried, setRetried] = useState<string[]>([]);
   const [fb, setFb] = useState<Feedback | null>(null);
   const [stats, setStats] = useState<Stats>({ asked: 0, correct: 0, xp: 0, learned: [], wrong: [] });
+  const [scored, setScored] = useState(false);
 
   const deck = params.get("deck");
   const mode = params.get("mode") as PracticeMode | null;
   const courseParam = params.get("course") as CourseId | null;
   const unitParam = params.get("unit");
   const course = p && courseParam && COURSES[courseParam] ? courseParam : p?.course;
-  const unit = course && unitParam && COURSES[course].decks[unitParam] ? unitParam : undefined;
+  const practice = !!(deck && mode);
+  // the unit this lesson counts towards; free practice counts towards none
+  const unit = !p || !course || practice ? undefined : unitParam && COURSES[course].decks[unitParam] ? unitParam : currentUnit(p, course).name;
 
   // build once, after progress has loaded
   useEffect(() => {
     if (!p || !course || queue) return;
-    if (deck && mode && COURSES[course].decks[deck]) setQueue(buildPractice(course, deck, mode));
+    if (practice && COURSES[course].decks[deck!]) setQueue(buildPractice(course, deck!, mode!));
     // a finished unit gets a round of choice questions instead of an empty lesson
     else if (unit && unitDone(p, course, unit)) setQueue(buildPractice(course, unit, "fr2zh"));
     else setQueue(buildLesson(p, course, unit));
-  }, [p, queue, deck, mode, course, unit]);
+  }, [p, queue, deck, mode, course, unit, practice]);
+
+  // keep the unit's best accuracy once the lesson is over
+  const finished = !!queue && queue.length > 0 && i >= queue.length;
+  useEffect(() => {
+    if (!finished || scored || !unit || !course) return;
+    setScored(true);
+    const pct = stats.asked ? Math.round((stats.correct / stats.asked) * 100) : 100;
+    const key = unitKey(course, unit);
+    update((cur) => ({ ...cur, best: { ...cur.best, [key]: Math.max(pct, cur.best[key] ?? 0) } }));
+  }, [finished, scored, unit, course, stats, update]);
 
   if (!p || !course || !queue) return <div className="h-96" />;
   if (queue.length === 0) return <Empty />;
   if (i >= queue.length) {
-    if (deck && mode) return <Results stats={stats} again={() => location.reload()} label="再来一节" />;
-    // next lesson: rest of this unit, or the next unit once this one is learned
-    const target = unit && !unitDone(p, course, unit) ? unit : currentUnit(p, course).name;
+    if (practice || !unit) return <Results stats={stats} again={() => location.reload()} label="再来一节" back={practice ? "/practice" : "/"} />;
+    // next lesson: rest of this unit, or the next unit once this one has a star
+    const target = currentUnit(p, course).name;
     const href = `/lesson?course=${course}&unit=${encodeURIComponent(target)}`;
-    return <Results stats={stats} again={() => location.assign(href)} label="下一节" />;
+    const done = unitDone(p, course, unit);
+    const best = p.best[unitKey(course, unit)];
+    const label = target === unit && done ? "再练一遍" : "下一节";
+    return <Results stats={stats} again={() => location.assign(href)} label={label} back="/course" unit={done ? { name: unit, best } : undefined} />;
   }
 
   const step = queue[i];
@@ -84,18 +100,33 @@ function Lesson() {
     setFb({ ok, step, cheer: pick(CHEERS) });
   };
 
-  const learned = () => {
+  const learned = (remembered: boolean) => {
     const w = stepWord(step)!;
+    // not remembered: the card comes back once at the end, and the word is not counted as learned yet
+    if (!remembered) {
+      if (!retried.includes(w.fr)) {
+        setRetried((r) => [...r, w.fr]);
+        setQueue((q) => [...q!, step]);
+      }
+      return next();
+    }
     update((cur) => recordLearned(cur, w.fr));
     setStats((s) => ({ ...s, xp: s.xp + (p.known[w.fr] ? 0 : XP.learn), learned: s.learned.includes(w.fr) ? s.learned : [...s.learned, w.fr] }));
     next();
   };
 
-  const matched = (miss: number) => {
+  const matched = (misses: [string, string][]) => {
     if (step.kind !== "match") return;
-    update((cur) => step.words.reduce((acc, w) => recordAnswer(acc, w.fr, true, XP.match), cur));
-    setStats((s) => ({ ...s, asked: s.asked + 1, correct: s.correct + (miss === 0 ? 1 : 0), xp: s.xp + XP.match * step.words.length }));
-    setFb({ ok: miss === 0, step, cheer: pick(CHEERS) });
+    const missed = new Set(misses.map(([fr]) => fr));
+    update((cur) => step.words.reduce((acc, w) => recordAnswer(acc, w.fr, !missed.has(w.fr), XP.match), cur));
+    setStats((s) => ({
+      ...s,
+      asked: s.asked + 1,
+      correct: s.correct + (missed.size === 0 ? 1 : 0),
+      xp: s.xp + XP.match * (step.words.length - missed.size),
+      wrong: [...s.wrong, ...[...missed].filter((fr) => !s.wrong.includes(fr))],
+    }));
+    setFb({ ok: missed.size === 0, step, cheer: pick(CHEERS), misses });
   };
 
   const quit = () => {
@@ -135,7 +166,16 @@ function FeedbackBar({ fb, onNext }: { fb: Feedback; onNext: () => void }) {
               正确答案：<b>{w.fr}</b> = {w.zh} <GenderTag fr={w.fr} />
             </p>
           )}
-          {!fb.ok && !w && <p className="mt-1 text-ink">有几次配错了，不过全部配完啦</p>}
+          {!fb.ok && fb.step.kind === "match" && (
+            <div className="mt-1 space-y-1 text-ink">
+              <p>全部配完啦，中间配错的是：</p>
+              {fb.misses?.map(([fr, zh], k) => (
+                <p key={k} className="text-sm">
+                  <b>{fr}</b> ≠ <s className="text-muted">{zh}</s>，应该是 {fb.step.kind === "match" && fb.step.words.find((x) => x.fr === fr)?.zh}
+                </p>
+              ))}
+            </div>
+          )}
         </div>
         <button
           autoFocus
@@ -149,7 +189,7 @@ function FeedbackBar({ fb, onNext }: { fb: Feedback; onNext: () => void }) {
   );
 }
 
-function Results({ stats, again, label }: { stats: Stats; again: () => void; label: string }) {
+function Results({ stats, again, label, back, unit }: { stats: Stats; again: () => void; label: string; back: string; unit?: { name: string; best?: number } }) {
   const pct = stats.asked ? Math.round((stats.correct / stats.asked) * 100) : 100;
   return (
     <div className="space-y-5 pt-6 text-center">
@@ -168,16 +208,34 @@ function Results({ stats, again, label }: { stats: Stats; again: () => void; lab
           <p className="text-sm text-muted">答对率</p>
         </div>
       </div>
+      {unit && <UnitStars name={unit.name} best={unit.best} />}
       {stats.learned.length > 0 && <WordList title="今天学会的词" words={stats.learned} />}
       {stats.wrong.length > 0 && <WordList title="答错的词（已加入复习）" words={stats.wrong} />}
       <div className="flex gap-3 pt-2">
-        <Link href="/" className="flex-1 rounded-2xl border border-line bg-surface py-4 font-bold">
-          回首页
+        <Link href={back} className="flex-1 rounded-2xl border border-line bg-surface py-4 font-bold">
+          {BACK_LABEL[back]}
         </Link>
         <button onClick={again} className="btn-3d flex-1 rounded-2xl bg-grass py-4 font-extrabold text-white">
           {label}
         </button>
       </div>
+    </div>
+  );
+}
+
+function UnitStars({ name, best }: { name: string; best?: number }) {
+  const stars = starsFor(best ?? 0);
+  return (
+    <div className="rounded-3xl border border-line bg-surface p-4">
+      <p className="text-sm font-bold">「{name}」单元学完了 · 最好成绩 {best ?? 0}%</p>
+      <div className="mt-2 flex justify-center gap-1">
+        {[1, 2, 3].map((s) => (
+          <PixelIcon key={s} name="star" size={4} className={s <= stars ? "" : "opacity-25 grayscale"} />
+        ))}
+      </div>
+      <p className="mt-2 text-xs text-muted">
+        {stars === 0 ? "正确率到 60% 就能拿到第一颗星，解锁下一个单元" : stars < 3 ? "80% 两颗星，100% 三颗星，可以再练一遍刷新成绩" : "满星！"}
+      </p>
     </div>
   );
 }
@@ -211,6 +269,8 @@ function Empty() {
     </div>
   );
 }
+
+const BACK_LABEL: Record<string, string> = { "/": "回首页", "/course": "回课程", "/practice": "回练习" };
 
 const unitDone = (p: Progress, course: CourseId, unit: string) => deckWords(course, unit).every((w) => p.known[w.fr]);
 
