@@ -107,7 +107,7 @@ export function currentUnit(p: Progress, course: CourseId) {
   return list.find((u) => u.unlocked && u.stars < 3) ?? list[list.length - 1];
 }
 
-export function newWords(p: Progress, course: CourseId, n = 6): Word[] {
-  const u = currentUnit(p, course);
-  return deckWords(course, u.name).filter((w) => !p.known[w.fr]).slice(0, n);
+export function newWords(p: Progress, course: CourseId, n = 6, unit?: string): Word[] {
+  const name = unit ?? currentUnit(p, course).name;
+  return deckWords(course, name).filter((w) => !p.known[w.fr]).slice(0, n);
 }

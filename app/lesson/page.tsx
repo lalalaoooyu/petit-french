@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
-import { COURSES, type CourseId } from "@/lib/courses";
+import { COURSES, deckWords, type CourseId } from "@/lib/courses";
 import { buildLesson, buildPractice, recordAnswer, recordLearned, XP, type PracticeMode, type Step } from "@/lib/lesson";
-import { useProgress } from "@/lib/progress";
+import { currentUnit, useProgress, type Progress } from "@/lib/progress";
 import GenderTag from "../components/GenderTag";
 import PixelIcon from "../components/PixelIcon";
 import { Choice, Learn, Match, Spell } from "./Questions";
@@ -36,17 +36,28 @@ function Lesson() {
   const deck = params.get("deck");
   const mode = params.get("mode") as PracticeMode | null;
   const courseParam = params.get("course") as CourseId | null;
+  const unitParam = params.get("unit");
+  const course = p && courseParam && COURSES[courseParam] ? courseParam : p?.course;
+  const unit = course && unitParam && COURSES[course].decks[unitParam] ? unitParam : undefined;
 
   // build once, after progress has loaded
   useEffect(() => {
-    if (!p || queue) return;
-    const course = courseParam && COURSES[courseParam] ? courseParam : p.course;
-    setQueue(deck && mode && COURSES[course].decks[deck] ? buildPractice(course, deck, mode) : buildLesson(p, course));
-  }, [p, queue, deck, mode, courseParam]);
+    if (!p || !course || queue) return;
+    if (deck && mode && COURSES[course].decks[deck]) setQueue(buildPractice(course, deck, mode));
+    // a finished unit gets a round of choice questions instead of an empty lesson
+    else if (unit && unitDone(p, course, unit)) setQueue(buildPractice(course, unit, "fr2zh"));
+    else setQueue(buildLesson(p, course, unit));
+  }, [p, queue, deck, mode, course, unit]);
 
-  if (!p || !queue) return <div className="h-96" />;
+  if (!p || !course || !queue) return <div className="h-96" />;
   if (queue.length === 0) return <Empty />;
-  if (i >= queue.length) return <Results stats={stats} again={() => location.reload()} />;
+  if (i >= queue.length) {
+    if (deck && mode) return <Results stats={stats} again={() => location.reload()} label="再来一节" />;
+    // next lesson: rest of this unit, or the next unit once this one is learned
+    const target = unit && !unitDone(p, course, unit) ? unit : currentUnit(p, course).name;
+    const href = `/lesson?course=${course}&unit=${encodeURIComponent(target)}`;
+    return <Results stats={stats} again={() => location.assign(href)} label="下一节" />;
+  }
 
   const step = queue[i];
   const next = () => {
@@ -88,7 +99,7 @@ function Lesson() {
   };
 
   const quit = () => {
-    if (i === 0 || confirm("确定退出吗？已经答过的题会保留记录。")) router.push(deck ? "/practice" : "/");
+    if (i === 0 || confirm("确定退出吗？已经答过的题会保留记录。")) router.push(deck ? "/practice" : unit ? "/course" : "/");
   };
 
   return (
@@ -138,7 +149,7 @@ function FeedbackBar({ fb, onNext }: { fb: Feedback; onNext: () => void }) {
   );
 }
 
-function Results({ stats, again }: { stats: Stats; again: () => void }) {
+function Results({ stats, again, label }: { stats: Stats; again: () => void; label: string }) {
   const pct = stats.asked ? Math.round((stats.correct / stats.asked) * 100) : 100;
   return (
     <div className="space-y-5 pt-6 text-center">
@@ -164,7 +175,7 @@ function Results({ stats, again }: { stats: Stats; again: () => void }) {
           回首页
         </Link>
         <button onClick={again} className="btn-3d flex-1 rounded-2xl bg-grass py-4 font-extrabold text-white">
-          再来一节
+          {label}
         </button>
       </div>
     </div>
@@ -200,6 +211,8 @@ function Empty() {
     </div>
   );
 }
+
+const unitDone = (p: Progress, course: CourseId, unit: string) => deckWords(course, unit).every((w) => p.known[w.fr]);
 
 const CHEERS = ["Très bien !", "Bravo !", "Parfait !", "Super !"];
 const pick = <T,>(a: T[]) => a[Math.floor(Math.random() * a.length)];

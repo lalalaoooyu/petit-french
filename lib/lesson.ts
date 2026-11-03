@@ -48,16 +48,17 @@ function dueWords(p: Progress): Word[] {
     .slice(0, MAX_REVIEW);
 }
 
-const ROTATION: Array<"fr2zh" | "zh2fr" | "ear" | "spell"> = ["fr2zh", "ear", "zh2fr", "spell"];
+// no spelling in lessons: it is too hard this early; it stays available in practice
+const ROTATION: ChoiceDir[] = ["fr2zh", "ear", "zh2fr"];
 
-export function buildLesson(p: Progress, course: CourseId): Step[] {
+/** due reviews, then up to 6 new words from `unit` (default: the current unit) */
+export function buildLesson(p: Progress, course: CourseId, unit?: string): Step[] {
   const steps: Step[] = [];
   for (const w of dueWords(p)) steps.push({ kind: "choice", word: w, dir: "fr2zh", options: options(w, course) });
-  const fresh = newWords(p, course, 6);
+  const fresh = newWords(p, course, 6, unit);
   for (const w of fresh) steps.push({ kind: "learn", word: w });
   shuffle(fresh).forEach((w, i) => {
-    const t = ROTATION[i % ROTATION.length];
-    steps.push(t === "spell" ? { kind: "spell", word: w } : { kind: "choice", word: w, dir: t, options: options(w, course) });
+    steps.push({ kind: "choice", word: w, dir: ROTATION[i % ROTATION.length], options: options(w, course) });
   });
   if (fresh.length >= 3) steps.push({ kind: "match", words: fresh.slice(0, 5) });
   return steps;

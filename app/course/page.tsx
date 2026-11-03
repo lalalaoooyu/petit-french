@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { COURSES, deckWords, type CourseId } from "@/lib/courses";
 import { units, useProgress, type UnitState } from "@/lib/progress";
@@ -55,7 +56,7 @@ export default function CoursePage() {
                 {u.known} / {u.total} 个词
               </div>
             </button>
-            {open === u.name && <UnitDetail course={course} name={u.name} known={p.known} />}
+            {open === u.name && <UnitDetail course={course} unit={u} known={p.known} />}
           </li>
         ))}
       </ol>
@@ -83,10 +84,17 @@ function Status({ unit }: { unit: UnitState }) {
   );
 }
 
-function UnitDetail({ course, name, known }: { course: CourseId; name: string; known: Record<string, 1> }) {
+function UnitDetail({ course, unit, known }: { course: CourseId; unit: UnitState; known: Record<string, 1> }) {
+  const name = unit.name;
   const deck = COURSES[course].decks[name];
   return (
     <div className="mt-3 rounded-3xl bg-surface p-4 ring-1 ring-line">
+      <Link
+        href={`/lesson?course=${course}&unit=${encodeURIComponent(name)}`}
+        className="btn-3d mb-3 block rounded-2xl bg-grass py-3.5 text-center text-lg font-extrabold text-white"
+      >
+        {unit.known === unit.total ? "再练一遍" : unit.known > 0 ? "继续学习" : "开始学习"}
+      </Link>
       <p className="mb-3 rounded-2xl bg-sun-soft p-3 text-sm leading-relaxed">
         <b>小贴士：</b>
         {deck.tip}
