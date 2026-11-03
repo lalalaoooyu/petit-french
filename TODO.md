@@ -1,11 +1,11 @@
 # Petit Français TODO
 
-最后更新：2026-11-02
+最后更新：2026-11-03
 
 ## 当前状态
 
 - `main` 分支：旧版单文件像素风网站（现在在 `legacy/index.html`），线上地址 https://lalalaoooyu.github.io/petit-french/
-- `next` 分支：Next.js 重写版，已推送到 GitHub，**还没部署成功**
+- `next` 分支：Next.js 重写版，**已部署到 Vercel：https://petit-french.vercel.app/**（推送到 `next` 就会自动部署；2026-11-03 手机上能打开）
   - 本地运行：`npm install` 后 `npx next dev -p 3005`
   - 注意：`npm run build` 会覆盖 `.next`，跑完要先删掉 `.next` 再启动 dev server
 
@@ -51,13 +51,14 @@ iOS 上架要点（备忘）：
 
 - [ ] 「我的」页面已有统计和设置，还缺词汇本（已掌握 / 学习中 / 易错词列表）
 - [ ] 空课程状态（全部学完且没有要复习的词）只按代码逻辑核对过，没有实测
-- [ ] **部署到 Vercel（做了一半）**
+- [ ] **部署到 Vercel（基本完成，2026-11-03）**
   - [x] 已在 Vercel 导入 GitHub 仓库，项目名 `petit-french`（Hobby 方案）
-  - [x] 第一次部署用了 `main` 分支，失败了（预期之内：main 上只有旧版 HTML，没有 Next.js 项目）
-  - [ ] 确认 Application Preset / Framework 是 Next.js，两个环境变量 `NEXT_PUBLIC_SUPABASE_URL`、`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` 已填（值见 `.env.local`）
-  - [ ] Settings → Git → Production Branch 改成 `next`，然后推送一个改动触发重新部署
-  - [ ] 拿到网址后，把它加进 Supabase → Authentication → URL Configuration（Site URL 和 Redirect URLs 的 `/auth/callback`）
-  - [ ] 线上检查各页面；用手机测登录和多设备同步
+  - [x] Framework Preset 从 Node 改成 Next.js；两个环境变量已填（类型选 Config，Production + Preview）
+  - [x] Production Branch 改成 `next`（新版在 Environments → Production → Branch Tracking）
+  - [x] Next.js 15.5.4 有安全漏洞，Vercel 拒绝构建 → 升到 15.5.28
+  - [x] Supabase URL Configuration：Site URL 改成线上网址，Redirect URLs 加了 `https://petit-french.vercel.app/auth/callback`（localhost 那条保留）
+  - [x] 手机能打开网站
+  - [ ] 线上测登录、两台设备之间的同步
   - [ ] 新版没问题后，把 `next` 合并到 `main`，关掉 GitHub Pages 或让旧网址跳转；旧网址上的浏览器进度不会自动带过去（登录过的进度在云端）
 - [ ] DELF A1 词汇是按经验整理的，没有逐条对照官方考纲
 - [ ] 以后可以考虑加 DELF A2 内容
