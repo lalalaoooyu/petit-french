@@ -209,7 +209,7 @@ function Results({ stats, again, label, back, unit }: { stats: Stats; again: () 
         </div>
       </div>
       {unit && <UnitStars name={unit.name} best={unit.best} />}
-      {stats.learned.length > 0 && <WordList title="今天学会的词" words={stats.learned} />}
+      {stats.learned.length > 0 && <WordList title="今天新学的词" words={stats.learned} />}
       {stats.wrong.length > 0 && <WordList title="答错的词（已加入复习）" words={stats.wrong} />}
       <div className="flex gap-3 pt-2">
         <Link href={back} className="flex-1 rounded-2xl border border-line bg-surface py-4 font-bold">

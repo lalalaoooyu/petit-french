@@ -36,14 +36,20 @@ export function loadLocal(): Progress {
     const c = localStorage.getItem("petitfr-course");
     if (c === "daily" || c === "exam") p.course = c;
   } catch {}
-  const today = new Date().toDateString();
-  const yesterday = new Date(Date.now() - DAY).toDateString();
-  if (p.last !== today) {
-    p.streak = p.last === yesterday ? p.streak + 1 : 1;
-    p.last = today;
+  // `last` is the last day studied; opening the app alone never extends the streak
+  if (p.last !== new Date().toDateString()) {
     p.today = 0;
+    if (p.last !== new Date(Date.now() - DAY).toDateString()) p.streak = 0;
   }
   return p;
+}
+
+/** the first answer or new word of a day extends the streak */
+export function markStudied(p: Progress): Progress {
+  const today = new Date().toDateString();
+  if (p.last === today) return p;
+  const yesterday = new Date(Date.now() - DAY).toDateString();
+  return { ...p, last: today, today: 0, streak: p.last === yesterday ? p.streak + 1 : 1 };
 }
 
 export function saveLocal(p: Progress, { silent = false } = {}) {
@@ -75,11 +81,16 @@ export function useProgress() {
   return [p, update] as const;
 }
 
-const endOfToday = () => {
+export const endOfToday = () => {
   const d = new Date();
   d.setHours(23, 59, 59, 999);
   return d.getTime();
 };
+
+/** box 3 can only be reached by right answers in reviews on two different days */
+const MASTERED_BOX = 3;
+export const masteredWords = (p: Progress) => Object.keys(p.box).filter((fr) => p.box[fr].b >= MASTERED_BOX);
+export const masteredCount = (p: Progress) => masteredWords(p).length;
 
 export function dueCount(p: Progress) {
   const end = endOfToday();

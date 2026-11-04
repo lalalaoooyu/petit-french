@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { COURSES } from "@/lib/courses";
-import { currentUnit, dueCount, newWords, useProgress } from "@/lib/progress";
+import { currentUnit, dueCount, masteredCount, newWords, useProgress } from "@/lib/progress";
 import PixelIcon from "./components/PixelIcon";
 
 const GREETINGS = ["Bonjour", "Coucou", "Salut"];
@@ -31,7 +31,7 @@ export default function Today() {
       <section className="grid grid-cols-3 gap-3">
         <Stat icon="flame" value={p.streak} label="连续天数" />
         <Stat icon="star" value={p.xp} label="经验值" />
-        <Stat icon="heart" value={Object.keys(p.known).length} label="已掌握" />
+        <Stat icon="heart" value={masteredCount(p)} label="已掌握" note={`学过 ${Object.keys(p.known).length}`} />
       </section>
 
       <section className="rounded-3xl border border-line bg-surface p-5">
@@ -86,12 +86,13 @@ export default function Today() {
   );
 }
 
-function Stat({ icon, value, label }: { icon: string; value: number; label: string }) {
+function Stat({ icon, value, label, note }: { icon: string; value: number; label: string; note?: string }) {
   return (
     <div className="flex flex-col items-center gap-1 rounded-3xl border border-line bg-surface py-4">
       <PixelIcon name={icon} size={3} />
       <span className="text-xl font-extrabold">{value}</span>
       <span className="text-xs text-muted">{label}</span>
+      {note && <span className="text-[11px] text-muted opacity-80">{note}</span>}
     </div>
   );
 }

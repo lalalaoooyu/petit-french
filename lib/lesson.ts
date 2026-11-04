@@ -1,5 +1,5 @@
 import { COURSES, deckWords, findWord, type CourseId, type Word } from "./courses";
-import { newWords, type Progress } from "./progress";
+import { endOfToday, markStudied, newWords, type Progress } from "./progress";
 
 export type ChoiceDir = "fr2zh" | "zh2fr" | "ear";
 export type Step =
@@ -38,10 +38,9 @@ export function options(word: Word, course: CourseId, pool?: Word[]): Word[] {
 const courseDecks = (c: CourseId) => COURSES[c].decks;
 
 function dueWords(p: Progress): Word[] {
-  const end = new Date();
-  end.setHours(23, 59, 59, 999);
+  const end = endOfToday();
   return Object.entries(p.box)
-    .filter(([, b]) => b.due <= end.getTime())
+    .filter(([, b]) => b.due <= end)
     .sort((a, b) => a[1].due - b[1].due)
     .map(([fr]) => findWord(fr))
     .filter((w): w is Word => !!w)
@@ -77,12 +76,15 @@ export function buildPractice(course: CourseId, deck: string, mode: PracticeMode
 
 function srs(box: Progress["box"], fr: string, ok: boolean) {
   const b = { ...(box[fr] ?? { b: 0, due: 0 }) };
+  // a right answer before the word is due (same lesson, free practice) leaves its schedule alone
+  if (ok && b.due > endOfToday()) return box;
   b.b = ok ? Math.min(5, b.b + 1) : 1;
   b.due = Date.now() + (ok ? 2 ** (b.b - 1) : 0) * DAY - 36e5;
   return { ...box, [fr]: b };
 }
 
-export function recordAnswer(p: Progress, fr: string, ok: boolean, xp: number): Progress {
+export function recordAnswer(prev: Progress, fr: string, ok: boolean, xp: number): Progress {
+  const p = markStudied(prev);
   const wrong = { ...p.wrong };
   if (ok) {
     if (wrong[fr]) wrong[fr]--;
@@ -91,7 +93,8 @@ export function recordAnswer(p: Progress, fr: string, ok: boolean, xp: number): 
   return { ...p, wrong, box: srs(p.box, fr, ok), xp: p.xp + (ok ? xp : 0), today: p.today + (ok ? xp : 0) };
 }
 
-export function recordLearned(p: Progress, fr: string): Progress {
+export function recordLearned(prev: Progress, fr: string): Progress {
+  const p = markStudied(prev);
   if (p.known[fr]) return p;
   return { ...p, known: { ...p.known, [fr]: 1 }, box: p.box[fr] ? p.box : srs(p.box, fr, true), xp: p.xp + XP.learn, today: p.today + XP.learn };
 }

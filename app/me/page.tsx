@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { COURSES, type CourseId } from "@/lib/courses";
-import { dueCount, units, useProgress } from "@/lib/progress";
+import { dueCount, masteredWords, units, useProgress } from "@/lib/progress";
 import { currentEmail, signOut, SYNC_EVENT, syncState, type SyncState } from "@/lib/sync";
 import PixelIcon from "../components/PixelIcon";
 
@@ -31,7 +31,8 @@ export default function Me() {
 
   if (!p) return <div className="h-96" />;
 
-  const learning = Object.keys(p.box).filter((fr) => !p.known[fr]).length;
+  const mastered = new Set(masteredWords(p));
+  const learning = Object.keys(p.known).filter((fr) => !mastered.has(fr)).length;
 
   return (
     <div className="space-y-5">
@@ -59,7 +60,7 @@ export default function Me() {
       <section className="grid grid-cols-2 gap-3">
         <Stat label="经验值" value={p.xp} />
         <Stat label="连续天数" value={p.streak} />
-        <Stat label="已掌握" value={Object.keys(p.known).length} />
+        <Stat label="已掌握" value={mastered.size} />
         <Stat label="今日待复习" value={dueCount(p)} />
         <Stat label="学习中" value={learning} />
         <Stat label="易错词" value={Object.keys(p.wrong).length} />
